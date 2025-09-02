@@ -1,154 +1,202 @@
-# ONNS
+# ONNS (옷늘날씨)
 
-> “What should I wear today?”  
-> ONNS is a weather OOTD community where you can share and reference temperature-based outfit ideas based on real-time feels-like temperature and users’ outfit data.
+A weather-driven outfit community platform that helps users decide what to wear today by combining real-time weather data with social sharing.
+
+**Live**: [https://onns.vercel.app/](https://onns.vercel.app/)
 
 ---
 
 ## Table of Contents
-- [Project Goals](#project-goals)  
-  - [User Perspective](#user-perspective)  
-  - [Developer Perspective](#developer-perspective)  
-- [Team Members](#team-members)  
-- [Tech Stack](#tech-stack)  
-- [Core Features Summary](#core-features-summary)  
-- [Directory Structure](#directory-structure)  
-- [Installation & Running](#installation--running)  
-- [Environment Variables](#environment-variables)  
-- [API Documentation](#api-documentation)
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Monorepo Layout](#monorepo-layout)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Environment Variables](#environment-variables)
+  - [Local Development](#local-development)
+- [Database](#database)
+- [Project Scripts](#project-scripts)
+- [Coding Standards](#coding-standards)
+- [Deployment](#deployment)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## Project Goals
+## Overview
 
-> Build **“a community where users share and discover real-life outfits according to feels-like temperature.”**
+ONNS (옷늘날씨, “Outfit for Today’s Weather”) is a community-driven platform where users:
 
-### User Perspective
-- Quickly browse **actual outfits** suitable for today’s weather  
-- Build a **temperature-based style reference** from user outfit data  
-- Narrow the **gap between feels-like temperature and real outfit choices**
+1. View today’s weather and feels-like temperature.
+2. Share their outfit choices and see what others are wearing.
+3. Filter by season, style, or feels-like preference.
+4. Engage with posts via comments and reactions.
 
-### Developer Perspective
-- Apply a **collaborative, maintainable architecture** (Clean Architecture, Git Flow)  
-- Strengthen core skills in **Next.js 15 / TypeScript / Tailwind CSS / Supabase**  
-- Experience team workflows: **PR reviews**, **Issue-based task assignment**  
-- Implement a UI matching Figma designs and document a **REST API specification**
+The platform blends utility (weather data) with community (social sharing) to make outfit selection simple and social.
 
 ---
 
-## Team Members
+## Key Features
 
-| Name        | GitHub       | Role                                                                 |
-|-------------|--------------|----------------------------------------------------------------------|
-| Gaeun Song  | gn-ioeo      | Login / User creation & deletion / Notifications / Likes             |
-| David J Song  | jaino-song   | My Page / Conditional post queries / API design / User update & read |
-| Joohyun Shin   | Shin363      | Main page / Comment management / OpenWeather & Geolocation API integration |
-| Daehee Hyung    | HyungDaehee  | OOTD & post retrieval / Filtering / Post features                    |
+- **Weather + Feels-like Filters** – posts can be tagged with feels-like ranges and seasons.
+- **Social Login** – easy authentication via providers.
+- **Responsive Design** – optimized across devices with Tailwind CSS.
+- **Real-time Feeds** – new posts and comments update instantly via Supabase Realtime.
+- **Scalable Backend** – built with Clean Architecture for separation of concerns.
+- **Community-first UX** – designed with Figma wireframes before coding to ensure smooth flows.
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────┐
+│            App UI            │  Next.js (App Router), React, Tailwind
+│  (app/*, components, hooks)  │
+└──────────────┬───────────────┘
+               │ API Routes / Server Actions (app/api/*)
+┌──────────────▼───────────────┐
+│         Application           │  Use cases, services, business logic
+│   (backend/application/*)     │
+└──────────────┬───────────────┘
+               │ Calls into domain + adapters
+┌──────────────▼───────────────┐
+│            Domain            │  Entities, value objects
+│     (backend/domain/*)       │
+└──────────────┬───────────────┘
+               │ Port interfaces
+┌──────────────▼───────────────┐
+│       Infrastructure         │  Supabase adapters (DB, storage, auth)
+│  (backend/infrastructure/*)  │
+└──────────────┬───────────────┘
+               │
+       ┌───────▼─────────┐     ┌───────────────┐
+       │   Prisma ORM    │────▶│  PostgreSQL   │
+       │  (prisma/*)     │     │  (DATABASE)   │
+       └─────────────────┘     └───────────────┘
+```
 
 ---
 
 ## Tech Stack
 
-| Area         | Technologies                                                     |
-|--------------|------------------------------------------------------------------|
-| Frontend     | Next.js 15 (App Router), React, TypeScript, Tailwind CSS, Axios, Zustand |
-| Backend      | Supabase (PostgreSQL, Storage), OpenWeather API, GeoLocation API |
-| Styling      | Tailwind CSS                                                     |
-| Dev Tools    | ESLint, Prettier, Husky, Commitlint, Git Flow                   |
-| Deployment   | Vercel                                                          |
+- **Web**: Next.js (App Router), React, TypeScript, Tailwind CSS
+- **Auth**: NextAuth.js (social login)
+- **DB/ORM**: PostgreSQL + Prisma
+- **Backend**: Supabase (Database, Realtime, Storage)
+- **State**: Zustand for client state management
+- **Design**: Figma for wireframes and prototyping
+- **Tooling**: ESLint, Prettier, commitlint, Husky
 
 ---
 
-## Core Features Summary
+## Monorepo Layout
 
-| System     | Main Features                                                                                           |
-|------------|---------------------------------------------------------------------------------------------------------|
-| **User**   | Sign up, Login, Account deletion                                                                         |
-| **OOTD**   | Create/Update/Delete posts; List & detail views; Display weather info; Sort (Newest / Most Liked); Filter (Season / Feels-Like Temp) |
-| **Likes**  | Add/Remove like; View liked posts                                                                        |
-| **Comments** | Add/View/Edit/Delete comments                                                                            |
-| **Weather** | Fetch external API → Store feels-like temperature; Show today’s weather on the main page                  |
-| **My Page** | View & edit profile; List of your posts & liked posts                                                   |
-
----
-
-## Directory Structure
-
-```plaintext
-ONNS/
-├── (backend)/                  # Clean-Architecture backend layer (DTOs, Use Cases, etc.)
-├── .github/                    # GitHub workflows & issue templates
-├── .husky/                     # Git hooks
-├── app/                        # Next.js App Router (pages & components)
-│   ├── ootd/                   # OOTD-related pages & components
-│   ├── mypage/                 # My Page components
-│   └── …  
-├── hooks/                      # Custom React Hooks
-├── lib/                        # Shared utilities
-├── public/                     # Static assets (images, icons)
-│   └── assets/
-├── stores/                     # Zustand global state
-├── types/                      # TypeScript type definitions
-├── utils/                      # Axios instance & API helpers
-├── OOTD-Permissions-Test.postman_collection.json  # Postman API collection
-├── next.config.ts              # Next.js config
-├── middleware.ts               # Next.js middleware
-├── vercel.json                 # Vercel deployment config
-├── package.json                # Dependencies & scripts
-└── tsconfig.json               # TypeScript config
+```
+.
+├─ app/                 # Next.js App Router pages, layouts, server actions, API routes
+├─ backend/             # Domain / application / infrastructure (Clean Architecture)
+├─ prisma/              # Prisma schema, migrations, seed
+├─ public/              # Static assets
+├─ hooks/ stores/       # Reusable React hooks, Zustand stores
+├─ lib/ utils/          # Shared libs, helpers, validators
+├─ constants/ types/    # Shared constants and TS types
+├─ next.config.ts       # Next.js config
+├─ middleware.ts        # Auth / routing middleware
+└─ package.json         # Scripts and configs
 ```
 
 ---
 
-## Installation & Running
+## Getting Started
 
-### Clone the Repository
+### Prerequisites
+
+- **Node.js**: 18.x or 20.x LTS
+- **Yarn** or **pnpm** (Yarn default)
+- **PostgreSQL**: local or hosted (Supabase recommended)
+
+### Environment Variables
+
+Create a `.env` file at the project root:
+
+| Name                   | Example                                      | Description                                     |
+| ---------------------- | -------------------------------------------- | ----------------------------------------------- |
+| `DATABASE_URL`         | `postgresql://user:pass@localhost:5432/onns` | Prisma connection string                        |
+| `NEXTAUTH_URL`         | `http://localhost:3000`                      | NextAuth base URL                               |
+| `NEXTAUTH_SECRET`      | `...`                                        | NextAuth secret (use `openssl rand -base64 32`) |
+| `SUPABASE_URL`         | `https://xyzcompany.supabase.co`             | Supabase project URL                            |
+| `SUPABASE_ANON_KEY`    | `...`                                        | Supabase anon key                               |
+| `GOOGLE_CLIENT_ID`     | `...apps.googleusercontent.com`              | OAuth provider (if enabled)                     |
+| `GOOGLE_CLIENT_SECRET` | `...`                                        | OAuth provider secret                           |
+
+### Local Development
+
 ```bash
-git clone https://github.com/FRONT-END-BOOTCAMP-PLUS-5/ONNS.git
-cd ONNS
-```
+# 1) Install deps
+$ yarn install
 
-### Install Dependencies
-```bash
-yarn install  # or npm install
-```
+# 2) Generate Prisma client
+$ npx prisma generate
 
-### Set Environment Variables
-Create a `.env.local` file at the project root with:
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-WEATHER_API_KEY=your_openweather_api_key
-```
+# 3) Run migrations
+$ npx prisma migrate dev --name init
 
-### Start Development Server
-```bash
-yarn dev  # or npm run dev
-```
+# 4) Seed DB (optional)
+$ npx prisma db seed
 
-### Build & Start Production Server
-```bash
-yarn build && yarn start  # or npm run build && npm start
+# 5) Start dev server
+$ yarn dev
+# http://localhost:3000
 ```
 
 ---
 
-## Environment Variables
+## Database
 
-| Variable Name                 | Description                                  |
-|-------------------------------|----------------------------------------------|
-| `NEXT_PUBLIC_SUPABASE_URL`    | Your Supabase project URL                    |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous API key             |
-| `WEATHER_API_KEY`             | External weather API key (e.g. OpenWeather)  |
+- Prisma schema in `prisma/schema.prisma`.
+- Supabase provides hosted DB + realtime listeners.
+- Use Prisma migrate and studio as usual.
+
+Common commands:
+
+```bash
+npx prisma studio
+npx prisma migrate dev --name <change>
+npx prisma db push
+```
 
 ---
 
-## API Documentation
-- **Postman Collection:** `./OOTD-Permissions-Test.postman_collection.json`  
-- **Main Endpoints:**  
-  - `GET    /api/posts`  
-  - `POST   /api/posts`  
-  - `PATCH  /api/posts/:id`  
-  - `DELETE /api/posts/:id`  
-  - `POST   /api/posts/:id/like`  
-  - `POST   /api/posts/:id/comments`  
+## Project Scripts
+
+- `dev` – start dev server
+- `build` – build production assets
+- `start` – start production server
+- `lint` – run ESLint
+- `format` – run Prettier
+- `typecheck` – run TS compiler checks
+- `prisma:*` – Prisma CLI helpers
+
+---
+
+## Coding Standards
+
+- ESLint + Prettier enforced.
+- Conventional commits enforced via Husky/commitlint.
+- Modular folder-by-layer code organization.
+
+---
+
+## Deployment
+
+- **Vercel** recommended for frontend and API routes.
+- **Supabase** handles DB, realtime, and storage.
+- Ensure env vars are configured in Vercel + Supabase dashboard.
+
+TBD – if open-sourced, consider MIT; else update accordingly.
+
