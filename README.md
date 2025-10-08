@@ -12,7 +12,7 @@ A weather-driven outfit community platform that helps users decide what to wear 
 - [Key Features](#key-features)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
-- [Monorepo Layout](#monorepo-layout)
+- [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Environment Variables](#environment-variables)
@@ -21,7 +21,6 @@ A weather-driven outfit community platform that helps users decide what to wear 
 - [Project Scripts](#project-scripts)
 - [Coding Standards](#coding-standards)
 - [Deployment](#deployment)
-- [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -29,9 +28,9 @@ A weather-driven outfit community platform that helps users decide what to wear 
 
 ## Overview
 
-ONNS (옷늘날씨, “Outfit for Today’s Weather”) is a community-driven platform where users:
+ONNS (옷늘날씨, "Outfit for Today's Weather") is a community-driven platform where users:
 
-1. View today’s weather and feels-like temperature.
+1. View today's weather and feels-like temperature.
 2. Share their outfit choices and see what others are wearing.
 3. Filter by season, style, or feels-like preference.
 4. Engage with posts via comments and reactions.
@@ -43,7 +42,7 @@ The platform blends utility (weather data) with community (social sharing) to ma
 ## Key Features
 
 - **Weather + Feels-like Filters** – posts can be tagged with feels-like ranges and seasons.
-- **Social Login** – easy authentication via providers.
+- **Social Login** – easy authentication via OAuth providers.
 - **Responsive Design** – optimized across devices with Tailwind CSS.
 - **Real-time Feeds** – new posts and comments update instantly via Supabase Realtime.
 - **Scalable Backend** – built with Clean Architecture for separation of concerns.
@@ -60,8 +59,8 @@ The platform blends utility (weather data) with community (social sharing) to ma
 └──────────────┬───────────────┘
                │ API Routes / Server Actions (app/api/*)
 ┌──────────────▼───────────────┐
-│         Application           │  Use cases, services, business logic
-│   (backend/application/*)     │
+│         Application          │  Use cases, services, business logic
+│   (backend/application/*)    │
 └──────────────┬───────────────┘
                │ Calls into domain + adapters
 ┌──────────────▼───────────────┐
@@ -74,10 +73,10 @@ The platform blends utility (weather data) with community (social sharing) to ma
 │  (backend/infrastructure/*)  │
 └──────────────┬───────────────┘
                │
-       ┌───────▼─────────┐     ┌───────────────┐
-       │   Prisma ORM    │────▶│  PostgreSQL   │
-       │  (prisma/*)     │     │  (DATABASE)   │
-       └─────────────────┘     └───────────────┘
+       ┌───────▼─────────┐
+       │    Supabase     │  PostgreSQL + Realtime + Storage + Auth
+       │   (Database)    │
+       └─────────────────┘
 ```
 
 ---
@@ -85,29 +84,33 @@ The platform blends utility (weather data) with community (social sharing) to ma
 ## Tech Stack
 
 - **Web**: Next.js (App Router), React, TypeScript, Tailwind CSS
-- **Auth**: NextAuth.js (social login)
-- **DB/ORM**: PostgreSQL + Prisma
-- **Backend**: Supabase (Database, Realtime, Storage)
-- **State**: Zustand for client state management
+- **Backend**: Supabase (Database, Realtime, Storage, Authentication)
+- **State Management**: Zustand for client state
 - **Design**: Figma for wireframes and prototyping
 - **Tooling**: ESLint, Prettier, commitlint, Husky
 
 ---
 
-## Monorepo Layout
+## Project Structure
 
 ```
 .
 ├─ app/                 # Next.js App Router pages, layouts, server actions, API routes
 ├─ backend/             # Domain / application / infrastructure (Clean Architecture)
-├─ prisma/              # Prisma schema, migrations, seed
+│  ├─ application/      # Use cases and business logic
+│  ├─ domain/           # Entities and value objects
+│  └─ infrastructure/   # Supabase adapters and external services
+├─ components/          # Reusable React components
+├─ hooks/               # Custom React hooks
+├─ stores/              # Zustand stores
+├─ lib/                 # Shared libraries and utilities
+├─ utils/               # Helper functions
+├─ constants/           # Application constants
+├─ types/               # TypeScript type definitions
 ├─ public/              # Static assets
-├─ hooks/ stores/       # Reusable React hooks, Zustand stores
-├─ lib/ utils/          # Shared libs, helpers, validators
-├─ constants/ types/    # Shared constants and TS types
-├─ next.config.ts       # Next.js config
-├─ middleware.ts        # Auth / routing middleware
-└─ package.json         # Scripts and configs
+├─ next.config.ts       # Next.js configuration
+├─ middleware.ts        # Auth and routing middleware
+└─ package.json         # Dependencies and scripts
 ```
 
 ---
@@ -117,86 +120,111 @@ The platform blends utility (weather data) with community (social sharing) to ma
 ### Prerequisites
 
 - **Node.js**: 18.x or 20.x LTS
-- **Yarn** or **pnpm** (Yarn default)
-- **PostgreSQL**: local or hosted (Supabase recommended)
+- **Yarn** or **pnpm** (Yarn recommended)
+- **Supabase account**: for database, authentication, and storage
 
 ### Environment Variables
 
-Create a `.env` file at the project root:
+Create a `.env.local` file at the project root:
 
-| Name                   | Example                                      | Description                                     |
-| ---------------------- | -------------------------------------------- | ----------------------------------------------- |
-| `DATABASE_URL`         | `postgresql://user:pass@localhost:5432/onns` | Prisma connection string                        |
-| `NEXTAUTH_URL`         | `http://localhost:3000`                      | NextAuth base URL                               |
-| `NEXTAUTH_SECRET`      | `...`                                        | NextAuth secret (use `openssl rand -base64 32`) |
-| `SUPABASE_URL`         | `https://xyzcompany.supabase.co`             | Supabase project URL                            |
-| `SUPABASE_ANON_KEY`    | `...`                                        | Supabase anon key                               |
-| `GOOGLE_CLIENT_ID`     | `...apps.googleusercontent.com`              | OAuth provider (if enabled)                     |
-| `GOOGLE_CLIENT_SECRET` | `...`                                        | OAuth provider secret                           |
+| Name                   | Example                          | Description                      |
+| ---------------------- | -------------------------------- | -------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`         | `https://xyzcompany.supabase.co` | Supabase project URL             |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`    | `eyJhbG...`                      | Supabase anonymous key           |
+| `SUPABASE_SERVICE_ROLE_KEY`        | `eyJhbG...`                      | Supabase service role key (server-side) |
+| `GOOGLE_CLIENT_ID`     | `...apps.googleusercontent.com`  | OAuth provider ID (if enabled)   |
+| `GOOGLE_CLIENT_SECRET` | `...`                            | OAuth provider secret            |
 
 ### Local Development
 
 ```bash
-# 1) Install deps
+# 1) Install dependencies
 $ yarn install
 
-# 2) Generate Prisma client
-$ npx prisma generate
+# 2) Set up environment variables
+$ cp .env.example .env.local
+# Edit .env.local with your Supabase credentials
 
-# 3) Run migrations
-$ npx prisma migrate dev --name init
-
-# 4) Seed DB (optional)
-$ npx prisma db seed
-
-# 5) Start dev server
+# 3) Start development server
 $ yarn dev
-# http://localhost:3000
+# App runs on http://localhost:3000
 ```
 
 ---
 
 ## Database
 
-- Prisma schema in `prisma/schema.prisma`.
-- Supabase provides hosted DB + realtime listeners.
-- Use Prisma migrate and studio as usual.
+The application uses **Supabase** for database management:
 
-Common commands:
+- PostgreSQL database hosted on Supabase
+- Real-time subscriptions for live updates
+- Row-level security (RLS) for data protection
+- Built-in authentication and storage
 
-```bash
-npx prisma studio
-npx prisma migrate dev --name <change>
-npx prisma db push
-```
+### Supabase Setup
+
+1. Create a new project on [Supabase](https://supabase.com)
+2. Set up your database tables using the Supabase dashboard or SQL editor
+3. Configure Row Level Security policies for data access control
+4. Copy your project URL and anon key to `.env.local`
 
 ---
 
 ## Project Scripts
 
-- `dev` – start dev server
+Run scripts with `yarn <script>`:
+
+- `dev` – start Next.js development server
 - `build` – build production assets
 - `start` – start production server
-- `lint` – run ESLint
-- `format` – run Prettier
-- `typecheck` – run TS compiler checks
-- `prisma:*` – Prisma CLI helpers
+- `lint` – run ESLint checks
+- `format` – run Prettier formatting
+- `typecheck` – run TypeScript compiler checks
 
 ---
 
 ## Coding Standards
 
-- ESLint + Prettier enforced.
-- Conventional commits enforced via Husky/commitlint.
-- Modular folder-by-layer code organization.
+- **ESLint + Prettier** enforced for code quality and consistency
+- **Conventional Commits** enforced via Husky and commitlint
+- **Clean Architecture** with modular folder-by-layer organization
+- **TypeScript** for type safety across the application
+
+Commit message format: `type(scope): description`
+- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
 ---
 
 ## Deployment
 
-- **Vercel** recommended for frontend and API routes.
-- **Supabase** handles DB, realtime, and storage.
-- Ensure env vars are configured in Vercel + Supabase dashboard.
+### Recommended Stack
+
+- **Frontend & API**: Vercel (optimal for Next.js)
+- **Database & Services**: Supabase (PostgreSQL + Realtime + Auth + Storage)
+
+### Deployment Steps
+
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Add environment variables in Vercel dashboard
+4. Deploy automatically on push to main branch
+
+Ensure all environment variables are configured in your hosting provider.
+
+---
+
+## Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes using conventional commits
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## License
 
 TBD – if open-sourced, consider MIT; else update accordingly.
-
